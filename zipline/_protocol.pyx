@@ -165,14 +165,12 @@ cdef class BarData:
     cdef object _last_calculated_universe
     cdef object _universe_last_updated_at
     cdef bool _daily_mode
+    cdef object _trading_calendar
 
     cdef bool _adjust_minutes
 
     def __init__(self, data_portal, simulation_dt_func, data_frequency,
-                 universe_func=None):
-        """
-
-        """
+                 trading_calendar, universe_func=None):
         self.data_portal = data_portal
         self.simulation_dt_func = simulation_dt_func
         self.data_frequency = data_frequency
@@ -185,6 +183,8 @@ cdef class BarData:
         self._universe_last_updated_at = None
 
         self._adjust_minutes = False
+
+        self._trading_calendar = trading_calendar
 
     cdef _get_equity_price_view(self, asset):
         """
@@ -462,16 +462,23 @@ cdef class BarData:
             })
 
     cdef bool _can_trade_for_asset(self, asset, dt, adjusted_dt, data_portal):
-        session_label = normalize_date(dt) # FIXME
+        cdef object session_label, dt_to_use
+
+        session_label = self._trading_calendar.minute_to_session_label(dt)
+        
         if not asset.is_alive_for_session(session_label):
             # asset isn't alive
             return False
 
-        # FIXME temporarily commenting out while we sort out some downstream
-        # dependencies
-        # if not asset.is_exchange_open(dt):
-        #     # exchange isn't open
-        #     return False
+        # Find the next market minute for this calendar, and check if this
+        # asset's exchange is open at that minute.
+        if self._trading_calendar.is_open_on_minute(dt):
+            dt_to_use = dt
+        else:
+            dt_to_use = self._trading_calendar.next_open(dt)
+
+        if not asset.is_exchange_open(dt_to_use):
+            return False
 
         if isinstance(asset, Future):
             # FIXME: this will get removed once we can get prices for futures
