@@ -563,11 +563,16 @@ def _make_bundle_core():
                     (after is not None and dt > after)
                 )
 
-        else:
+        elif keep_last > 0:
             last_n_dts = set(all_runs[-keep_last:])
 
             def should_clean(name):
                 return name not in last_n_dts
+        elif keep_last == 0:
+            def should_clean(name):
+                return True
+        else:
+            raise BadClean(before, after, keep_last)
 
         cleaned = set()
         for run in all_runs:
