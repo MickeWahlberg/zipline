@@ -989,9 +989,10 @@ class WithBcolzEquityMinuteBarReader(WithEquityMinuteBarData, WithTmpDir):
         days = cls.equity_minute_bar_days
 
         writer = BcolzMinuteBarWriter(
-            days[0],
             p,
             cls.trading_calendar,
+            days[0],
+            days[-1],
             US_EQUITIES_MINUTES_PER_DAY
         )
         writer.write(cls.make_equity_minute_bar_data())
@@ -1048,9 +1049,10 @@ class WithBcolzFutureMinuteBarReader(WithFutureMinuteBarData, WithTmpDir):
         days = cls.future_minute_bar_days
 
         writer = BcolzMinuteBarWriter(
-            days[0],
             p,
             trading_calendar,
+            days[0],
+            days[-1],
             FUTURES_MINUTES_PER_DAY,
         )
         writer.write(cls.make_future_minute_bar_data())
